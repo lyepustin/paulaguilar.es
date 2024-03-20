@@ -1,0 +1,5 @@
+.env
+wordpress/certbot-etc
+wordpress/certbot-var
+wordpress/dbdata
+
