@@ -1,9 +1,9 @@
 version: '3'
 
 services:
-  db:
+  wordpress_db:
     image: mysql:8.0
-    container_name: db
+    container_name: wordpress_db
     restart: unless-stopped
     env_file: .env
     environment:
@@ -16,13 +16,13 @@ services:
 
   wordpress:
     depends_on:
-      - db
-    image: wordpress:5.1.1-fpm-alpine
+      - wordpress_db
+    image: wordpress:php8.2-fpm-alpine
     container_name: wordpress
     restart: unless-stopped
     env_file: .env
     environment:
-      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_HOST=wordpress_db:3306
       - WORDPRESS_DB_USER=$MYSQL_USER
       - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
       - WORDPRESS_DB_NAME=wordpress
@@ -31,10 +31,20 @@ services:
     networks:
       - app-network
 
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - wordpress_db
+    ports:
+      - "58080:8080"
+
   webserver:
     depends_on:
       - wordpress
-    image: nginx:1.15.12-alpine
+    image: nginx:1.25.4-alpine
     container_name: webserver
     restart: unless-stopped
     ports:
@@ -64,6 +74,7 @@ volumes:
   certbot-var:
   wordpress:
   dbdata:
+  nginx-conf:
 
 networks:
   app-network:
