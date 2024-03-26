@@ -1,5 +1,4 @@
 ---
-# this is used for local development and testing
 version: "3.0"
 services:
   little-link:
@@ -24,13 +23,13 @@ services:
       - BIO=👩‍🍳Saborea el arte de la cocina👩‍🍳
       - FOOTER=👋🌟¡Gracias por su visita!🌟👋
 
-      - OG_SITE_NAME=Paula Aguilar - El arte de cocinar
-      - OG_TITLE=Paula Aguilar
-      - OG_DESCRIPTION=👩‍🍳Saborea el arte de la cocina👩‍🍳
+      - OG_SITE_NAME=Paula Aguilar
+      - OG_TITLE=👩‍🍳 Saborea el arte de la cocina 👩‍🍳
+      - OG_DESCRIPTION=⬇️ Enlaces interesantes ⬇️
       - OG_URL=https://links.paulaguilar.es
-      - OG_IMAGE=https://pbs.twimg.com/profile_images/1286144221217316864/qIAsKOpB_400x400.jpg
-      - OG_IMAGE_WIDTH=400
-      - OG_IMAGE_HEIGHT=400
+      - OG_IMAGE=https://www.paulaguilar.es/wp-content/uploads/2024/03/logo-open-graph-resize.png
+      - OG_IMAGE_WIDTH=500
+      - OG_IMAGE_HEIGHT=321
 
       - SHARE=https://links.paulaguilar.es
 
