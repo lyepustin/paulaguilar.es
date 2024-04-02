@@ -1,0 +1,141 @@
+version: '3.1'
+
+services:
+
+  little-link:
+    image: ghcr.io/techno-tim/littlelink-server:latest
+    container_name: littlelink-server
+    build:
+      context: /opt/pau/paulaguilar.es/littlelink-server/
+      dockerfile: Dockerfile
+    environment:
+      - META_TITLE=Paula Aguilar
+      - META_DESCRIPTION=El arte de la cocinar
+      - META_AUTHOR=Paula Aguilar
+      - META_KEYWORDS=Bocados Sabrosos, Delicias Culinarias, Recetas Rápidas, Cocina
+      - LANG=es
+      - META_INDEX_STATUS=all
+      - THEME=Light
+      - FAVICON_URL=https://www.paulaguilar.es/wp-content/uploads/2024/03/cropped-logo-simple-marron-192x192.png
+      - AVATAR_URL=https://www.paulaguilar.es/wp-content/uploads/2024/03/cropped-logo-simple-marron-192x192.png
+      - AVATAR_2X_URL=https://www.paulaguilar.es/wp-content/uploads/2024/03/cropped-logo-simple-marron-192x192.png
+      - AVATAR_ALT=Paula Aguilar Profile Pic
+      - NAME=Paula Aguilar
+      - BIO=👩‍🍳Saborea el arte de la cocina👩‍🍳
+      - FOOTER=👋🌟¡Gracias por su visita!🌟👋
+
+      - OG_SITE_NAME=Paula Aguilar
+      - OG_TITLE=👩‍🍳 Saborea el arte de la cocina 👩‍🍳
+      - OG_DESCRIPTION=⬇️ Enlaces interesantes ⬇️
+      - OG_URL=https://links.paulaguilar.es
+      - OG_IMAGE=https://www.paulaguilar.es/wp-content/uploads/2024/03/logo-open-graph-resize.png
+      - OG_IMAGE_WIDTH=500
+      - OG_IMAGE_HEIGHT=321
+
+      - SHARE=https://links.paulaguilar.es
+
+      - CUSTOM_BUTTON_TEXT=Libro de recetas
+      - CUSTOM_BUTTON_URL=https://paulaguilar.es
+      - CUSTOM_BUTTON_COLOR=#ffffff
+      - CUSTOM_BUTTON_TEXT_COLOR=#b29079
+      - CUSTOM_BUTTON_ALT_TEXT=Enlace de página web con recetas de Paula Aguilar
+      - CUSTOM_BUTTON_NAME=¡Visita mi página web!
+      - CUSTOM_BUTTON_ICON=fas receipt
+
+      - YOUTUBE=https://youtube.com/@paula.art.cooking
+      - TWITTER=https://twitter.com/pau_art_cooking
+      - INSTAGRAM=https://instagram.com/paula.art.cooking/
+      - TIKTOK=https://tiktok.com/@paula.art.cooking
+      - EMAIL=paulaguilarcooking@gmail.com
+      - EMAIL_TEXT=Contacto
+
+      - UMAMI_WEBSITE_ID=a7d437c4-c2c7-48c4-8935-788f94d89925
+      - UMAMI_APP_URL=https://analytics.eu.umami.is
+      - UMAMI_SCRIPT_NAME=script.js
+      # - PINTEREST=https://www.pinterest.com/
+      # - FACEBOOK=https://facebook.com
+      # - SNAPCHAT=https://www.snapchat.com/
+      # - TELEGRAM=https://telegram.org/
+      # - WHATSAPP=https://www.whatsapp.com/
+      # - AMAZON_AFFILIATE=https://affiliate-program.amazon.co.uk/
+      # - X=https://x.com
+
+      # ports:
+      #   - 3000
+    networks:
+      - app-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  wordpress_db:
+    image: mysql:8.0
+    container_name: wordpress_db
+    restart: unless-stopped
+    env_file: /opt/pau/paulaguilar.es/wordpress/.env
+    environment:
+      - MYSQL_DATABASE=wordpress
+    networks:
+      - app-network
+    volumes:
+      - /opt/pau/paulaguilar.es/wordpress/dbdata:/var/lib/mysql
+    command: '--default-authentication-plugin=mysql_native_password'
+
+  wordpress:
+    depends_on:
+      - wordpress_db
+    image: wordpress:php8.2-fpm-alpine
+    container_name: wordpress
+    restart: unless-stopped
+    env_file: /opt/pau/paulaguilar.es/wordpress/.env
+    environment:
+      - WORDPRESS_DB_HOST=wordpress_db:3306
+      - WORDPRESS_DB_USER=$MYSQL_USER
+      - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
+      - WORDPRESS_DB_NAME=wordpress
+    networks:
+      - app-network
+    volumes:
+      - ./data/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+      - /opt/pau/paulaguilar.es/wordpress/wordpress:/var/www/html
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - wordpress_db
+    ports:
+      - "58080:8080"
+
+  nginx:
+    container_name: webserver
+    image: nginx:1.25.4-alpine
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./data/nginx:/etc/nginx/conf.d
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+      - /opt/pau/paulaguilar.es/wordpress/wordpress:/var/www/html
+    networks:
+      - app-network
+    ports:
+      - "80:80"
+      - "443:443"
+      - "420:420"
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+networks:
+  app-network:
+    driver: bridge
